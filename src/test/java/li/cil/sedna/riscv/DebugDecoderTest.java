@@ -24,7 +24,7 @@ public class DebugDecoderTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints={0, })
+    @ValueSource(ints={0, 0x1c, 0x14, 0x6101, 0x402e, 0x504e, 0x704e, 0x8002})
     void testDecodeInvalidInstruction(int opcode) {
         assertThrows(R5IllegalInstructionException.class, () -> { debugDecoder.decode(opcode); });
     }
@@ -39,7 +39,7 @@ public class DebugDecoderTest {
 
     @ParameterizedTest
     @MethodSource("makeTestDecodeValidArgs")
-    void testDecodeValidInstruction(int opcode, String expectedInstructionName, Collection<Integer> args) {
+    void testDecodeValidInstruction(int opcode, String expectedInstructionName, Collection<Integer> args) throws R5IllegalInstructionException {
         var decoded = debugDecoder.decode(opcode);
         assertEquals(decoded.name, expectedInstructionName);
         // TODO args

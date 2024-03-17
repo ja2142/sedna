@@ -3,6 +3,7 @@ package li.cil.sedna.instruction.decoder;
 import li.cil.sedna.instruction.InstructionDeclaration;
 import li.cil.sedna.instruction.decoder.tree.DecoderTreeBranchNode;
 import li.cil.sedna.instruction.decoder.tree.DecoderTreeSwitchNode;
+import li.cil.sedna.riscv.exception.R5IllegalInstructionException;
 import li.cil.sedna.utils.DecisionTreeNode;
 
 public final class DebugDecoderTreeVisitor implements DecoderTreeVisitor {
@@ -15,8 +16,12 @@ public final class DebugDecoderTreeVisitor implements DecoderTreeVisitor {
         return decoderDecisionTreeRoot;
     }
 
-    public InstructionDeclaration decode(int opcode) {
-        return decoderDecisionTreeRoot.decide(opcode);
+    public InstructionDeclaration decode(int opcode) throws R5IllegalInstructionException {
+        var instruction = decoderDecisionTreeRoot.decide(opcode);
+        if (instruction.name == "ILLEGAL") {
+            throw new R5IllegalInstructionException();
+        }
+        return instruction;
     }
 
     @Override
@@ -101,7 +106,7 @@ public final class DebugDecoderTreeVisitor implements DecoderTreeVisitor {
 
         @Override
         public DecoderTreeVisitor visitBranchCase(final int index, final int mask, final int pattern) {
-            return new InnerNodeVisitor(branchNode);
+            return new InnerNodeVisitor(branchNode.addChild(new DecisionTreeNode<Integer, InstructionDeclaration>((opcode) -> (opcode & mask) == pattern)));
         }
 
         @Override
