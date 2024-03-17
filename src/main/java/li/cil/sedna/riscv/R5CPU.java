@@ -18,6 +18,15 @@ public interface R5CPU extends Steppable, Resettable, RealTimeCounter, Interrupt
         return create(physicalMemory, null);
     }
 
+    // make a non-generated version of R5CPU, which makes debugging easier (and probably makes everything way slower)
+    static R5CPU create(final MemoryMap physicalMemory, @Nullable final RealTimeCounter rtc, boolean debugCpu) {
+        if(debugCpu){
+            return new R5CPUNonGenerated(physicalMemory, rtc);
+        } else {
+            return create(physicalMemory, rtc);
+        }
+    }
+
     long getISA();
 
     void setXLEN(int value);

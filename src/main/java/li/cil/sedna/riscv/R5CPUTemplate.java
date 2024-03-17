@@ -45,7 +45,7 @@ import java.util.function.LongConsumer;
  * </ul>
  */
 @Serialized
-final class R5CPUTemplate implements R5CPU {
+class R5CPUTemplate implements R5CPU {
     private static final int PC_INIT = 0x1000; // Initial position of program counter.
 
     // UBE, SBE, MBE hardcoded to zero for little endianness.
@@ -373,6 +373,7 @@ final class R5CPUTemplate implements R5CPU {
                 }
                 mcycle++;
 
+                savedThis = this;
                 ///////////////////////////////////////////////////////////////////
                 // This is the hook we replace when generating the decoder code. //
                 decode();                                                        //
@@ -409,6 +410,7 @@ final class R5CPUTemplate implements R5CPU {
                 }
                 mcycle++;
 
+                savedThis = this;
                 ///////////////////////////////////////////////////////////////////
                 // This is the hook we replace when generating the decoder code. //
                 decode();                                                        //
@@ -434,9 +436,18 @@ final class R5CPUTemplate implements R5CPU {
         }
     }
 
+    // terrible, but I can't think of an easy way of doing this properly
+    // changing decode hook in the generators seems hard, maybe there's some
+    // not completely unreasonable way to get this from a stack frame below?
+    private static R5CPUTemplate savedThis;
+
+    protected void doDecode() throws R5IllegalInstructionException, R5MemoryAccessException {
+        throw new UnsupportedOperationException();
+    }
+
     @SuppressWarnings("RedundantThrows")
     private static void decode() throws R5IllegalInstructionException, R5MemoryAccessException {
-        throw new UnsupportedOperationException();
+        savedThis.doDecode();
     }
 
     ///////////////////////////////////////////////////////////////////

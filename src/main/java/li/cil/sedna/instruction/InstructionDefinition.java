@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 
 public final class InstructionDefinition {
     @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME)
     public @interface Instruction {
         String value();
     }
