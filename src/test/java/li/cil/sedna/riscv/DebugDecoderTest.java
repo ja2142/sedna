@@ -32,6 +32,7 @@ public class DebugDecoderTest {
     private static Stream<Arguments> makeTestDecodeValidArgs() {
         Collection<Integer> emptyArgs = new ArrayList<>();
         return Stream.of(
+            // TODO args
             Arguments.of(0x2000, "FLD", emptyArgs),
             Arguments.of(0x2200, "FLD", emptyArgs)
         );
@@ -39,9 +40,9 @@ public class DebugDecoderTest {
 
     @ParameterizedTest
     @MethodSource("makeTestDecodeValidArgs")
-    void testDecodeValidInstruction(int opcode, String expectedInstructionName, Collection<Integer> args) throws R5IllegalInstructionException {
+    void testDecodeValidInstruction(int opcode, String expectedInstructionName, Collection<Integer> expectedArgs) throws R5IllegalInstructionException {
         var decoded = debugDecoder.decode(opcode);
         assertEquals(decoded.name, expectedInstructionName);
-        // TODO args
+        assertEquals(decoded.args, expectedArgs);
     }
 }

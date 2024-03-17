@@ -1,5 +1,6 @@
 package li.cil.sedna.instruction.decoder;
 
+import li.cil.sedna.instruction.InstructionApplication;
 import li.cil.sedna.instruction.InstructionDeclaration;
 import li.cil.sedna.instruction.decoder.tree.DecoderTreeBranchNode;
 import li.cil.sedna.instruction.decoder.tree.DecoderTreeSwitchNode;
@@ -16,12 +17,12 @@ public final class DebugDecoderTreeVisitor implements DecoderTreeVisitor {
         return decoderDecisionTreeRoot;
     }
 
-    public InstructionDeclaration decode(int opcode) throws R5IllegalInstructionException {
-        var instruction = decoderDecisionTreeRoot.decide(opcode);
-        if (instruction.name == "ILLEGAL") {
+    public InstructionApplication decode(int opcode) throws R5IllegalInstructionException {
+        var declaration = decoderDecisionTreeRoot.decide(opcode);
+        if (declaration.name == "ILLEGAL") {
             throw new R5IllegalInstructionException();
         }
-        return instruction;
+        return InstructionApplication.fromOpcode(declaration, opcode);
     }
 
     @Override
