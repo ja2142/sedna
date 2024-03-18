@@ -32,9 +32,18 @@ public class DebugDecoderTest {
     private static Stream<Arguments> makeTestDecodeValidArgs() {
         Collection<Integer> emptyArgs = new ArrayList<>();
         return Stream.of(
-            // TODO args
-            Arguments.of(0x2000, "FLD", emptyArgs),
-            Arguments.of(0x2200, "FLD", emptyArgs)
+            // some base I instructions
+            Arguments.of(0x510133, "ADD", new int[]{2,2,5}),
+            Arguments.of(0x407352b3, "SRA", new int[]{5,6,7}),
+            Arguments.of(0x5e8f0f93, "ADDI", new int[]{31, 30, 0x5e8}),
+            Arguments.of(0x73, "ECALL", emptyArgs),
+            Arguments.of(0x100073, "EBREAK", emptyArgs),
+            Arguments.of(0xc3060723, "SB", new int[]{12, 16, 0xc2e}),
+            Arguments.of(0x1b44d303, "LHU", new int[]{6, 9, 0x1b4}),
+            Arguments.of(0x8e050e63, "BEQ", new int[]{10, 0, 0x87e}),
+            Arguments.of(0x707951e3, "BGE", new int[]{18, 7, 0x781}),
+            Arguments.of(0x1682e0ef, "JAL", new int[]{1, 0x170b4}),
+            Arguments.of(0xa35ec437, "LUI", new int[]{8, 0xa35ec000})
         );
     }
 
