@@ -43,7 +43,18 @@ public class DebugDecoderTest {
             Arguments.of(0x8e050e63, "BEQ", new int[]{10, 0, 0x87e}),
             Arguments.of(0x707951e3, "BGE", new int[]{18, 7, 0x781}),
             Arguments.of(0x1682e0ef, "JAL", new int[]{1, 0x170b4}),
-            Arguments.of(0xa35ec437, "LUI", new int[]{8, 0xa35ec000})
+            Arguments.of(0xa35ec437, "LUI", new int[]{8, 0xa35ec000}),
+            Arguments.of(0x3e29313, "SLLI", new int[]{6, 5, 62}),
+            Arguments.of(0xf1103473, "CSRRC", new int[]{8, 0, 0xf11}),
+            // those are the same instructions, with only difference in unused bits
+            Arguments.of(0xb533af, "AMOADD.D", new int[]{5, 10, 11}),
+            Arguments.of(0x2b533af, "AMOADD.D", new int[]{5, 10, 11}),
+            Arguments.of(0x6b533af, "AMOADD.D", new int[]{5, 10, 11}),
+            Arguments.of(0x18208043, "FMADD.S", new int[]{0, 0, 1, 2, 3}),
+            Arguments.of(0xd24, "ADDI", new int[]{9, 2, 0x1a4}), // C.ADDI4SPN
+            Arguments.of(0x715d, "ADDI", new int[]{2, 2, 0x3a0}), // C.ADDI16SP TODO sign extension?
+            Arguments.of(0x5944, "LW", new int[]{9, 10, 0x34}), // C.LW
+            Arguments.of(0x7944, "LD", new int[]{9, 10, 0xb0}) // C.LD
         );
     }
 
