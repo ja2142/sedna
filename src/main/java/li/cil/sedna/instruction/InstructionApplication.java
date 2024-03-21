@@ -6,10 +6,12 @@ import java.util.Collection;
 // a specific instruction decoded from some opcode
 // e.g. ADDI sp, sp, 16
 public class InstructionApplication {
-    static final Collection<Integer> emptyArgs = new ArrayList<>();
-
     public static InstructionApplication fromOpcode(InstructionDeclaration declaration, int opcode) {
-        return new InstructionApplication(declaration.name, emptyArgs);
+        Collection<Integer> args = new ArrayList<>();
+        declaration.arguments.forEach(
+            (k, v) -> args.add(v.get(opcode))
+        );
+        return new InstructionApplication(declaration.name, args);
     }
 
     InstructionApplication(String name, Collection<Integer> args) {
