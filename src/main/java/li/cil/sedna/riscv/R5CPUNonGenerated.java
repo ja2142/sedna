@@ -121,13 +121,14 @@ public class R5CPUNonGenerated extends R5CPUTemplate {
         } catch (final R5IllegalInstructionException e) {
             this.pc = pc;
             raiseException(R5.EXCEPTION_ILLEGAL_INSTRUCTION, inst);
-        // } catch (final R5MemoryAccessException e) {
-        //     this.pc = pc;
-        //     raiseException(e.getType(), e.getAddress());
+        } catch (final R5MemoryAccessException e) {
+            this.pc = pc;
+            raiseException(e.getType(), e.getAddress());
         }
     }
 
-    boolean invokeInstruction(InstructionApplication instructionApplied, Method instructionMethod, long pc, int instructionSize) throws R5IllegalInstructionException {
+    boolean invokeInstruction(InstructionApplication instructionApplied, Method instructionMethod, long pc, int instructionSize)
+        throws R5IllegalInstructionException, R5MemoryAccessException {
         if (instructionApplied.name.equals("NOP")) {
             return false;
         }
@@ -158,6 +159,8 @@ public class R5CPUNonGenerated extends R5CPUTemplate {
                 throw (RuntimeException)e.getCause();
             } else if(e.getCause().getClass().equals(R5IllegalInstructionException.class)) {
                 throw (R5IllegalInstructionException)e.getCause();
+            } else if(e.getCause().getClass().equals(R5MemoryAccessException.class)) {
+                throw (R5MemoryAccessException)e.getCause();
             } else {
                 throw new Error("unhandled exception when executing instruction", e.getCause());
             }
