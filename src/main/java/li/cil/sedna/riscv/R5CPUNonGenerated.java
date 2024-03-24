@@ -132,6 +132,9 @@ public class R5CPUNonGenerated extends R5CPUTemplate {
         if (instructionApplied.name.equals("NOP")) {
             return false;
         }
+        if (instructionApplied.name.equals("ILLEGAL")) {
+            throw new R5IllegalInstructionException();
+        }
 
         // this is probably third copy of args? could probably be done in a lot less inefficient way
         var args = new ArrayList<Object>(instructionApplied.args);
