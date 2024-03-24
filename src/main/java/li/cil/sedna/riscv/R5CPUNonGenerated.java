@@ -78,8 +78,9 @@ public class R5CPUNonGenerated extends R5CPUTemplate {
             }
             if (instructionApplied.name.equals("ECALL")
                 || instructionApplied.name.equals("EBREAK")
-                || instructionApplied.name.equals("MRET")) {
-                // don't update pc on exceptions or mret
+                || instructionApplied.name.equals("MRET")
+                || instructionApplied.name.equals("SRET")) {
+                // don't update pc on exceptions or returns
                 updatePC = false;
             }
         } catch(InvocationTargetException e) {
