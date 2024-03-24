@@ -101,6 +101,7 @@ public class R5CPUNonGenerated extends R5CPUTemplate {
     }
 
     protected void interpretInstruction(final MemoryMappedDevice device, int inst, long pc, int instOffset, final int instEnd, final LongSet breakpoints) {
+        mcycle++;
         try{
             int instructionSize = (inst & 0b11) == 0b11? 4: 2;
             
