@@ -16,20 +16,29 @@ import li.cil.sedna.riscv.exception.R5IllegalInstructionException;
 
 public class DebugDecoderTest {
 
-    DebugDecoderTreeVisitor debugDecoder;
+    DebugDecoderTreeVisitor debugDecoder32;
+    DebugDecoderTreeVisitor debugDecoder64;
 
     public DebugDecoderTest() {
-        this.debugDecoder = new DebugDecoderTreeVisitor();
-        R5Instructions.getDecoderTree().accept(this.debugDecoder);
+        this.debugDecoder64 = new DebugDecoderTreeVisitor();
+        R5Instructions.RV64.getDecoderTree().accept(this.debugDecoder64);
+        this.debugDecoder32 = new DebugDecoderTreeVisitor();
+        R5Instructions.RV32.getDecoderTree().accept(this.debugDecoder32);
     }
 
     @ParameterizedTest
     @ValueSource(ints={0, 0x1c, 0x14, 0x6101, 0x402e, 0x504e, 0x704e, 0x8002})
-    void testDecodeInvalidInstruction(int opcode) {
-        assertThrows(R5IllegalInstructionException.class, () -> { debugDecoder.decode(opcode); });
+    void testDecoderv64InvalidInstruction(int opcode) {
+        assertThrows(R5IllegalInstructionException.class, () -> { debugDecoder64.decode(opcode); });
     }
 
-    private static Stream<Arguments> makeTestDecodeValidArgs() {
+    @ParameterizedTest
+    @ValueSource(ints={0, 0x1c, 0x14, 0x6101, 0x402e, 0x504e, 0x8002, 0x02051513})
+    void testDecoderv32InvalidInstruction(int opcode) {
+        assertThrows(R5IllegalInstructionException.class, () -> { debugDecoder32.decode(opcode); });
+    }
+    
+    private static Stream<Arguments> makeTestDecoderv64ValidArgs() {
         Integer[] emptyArgs = new Integer[]{};
         return Stream.of(
             // some base I instructions
@@ -59,9 +68,9 @@ public class DebugDecoderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("makeTestDecodeValidArgs")
-    void testDecodeValidInstruction(int opcode, String expectedInstructionName, Collection<Integer> expectedArgs) throws R5IllegalInstructionException {
-        var decoded = debugDecoder.decode(opcode);
+    @MethodSource("makeTestDecoderv64ValidArgs")
+    void testDecoderv64ValidInstruction(int opcode, String expectedInstructionName, Collection<Integer> expectedArgs) throws R5IllegalInstructionException {
+        var decoded = debugDecoder64.decode(opcode);
         assertEquals(decoded.name, expectedInstructionName);
         assertIterableEquals(decoded.args, expectedArgs);
     }

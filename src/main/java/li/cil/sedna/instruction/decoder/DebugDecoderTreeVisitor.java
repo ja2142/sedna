@@ -19,7 +19,7 @@ public final class DebugDecoderTreeVisitor implements DecoderTreeVisitor {
 
     public InstructionApplication decode(int opcode) throws R5IllegalInstructionException {
         var declaration = decoderDecisionTreeRoot.decide(opcode);
-        if (declaration.name == "ILLEGAL") {
+        if (declaration == null || declaration.name == "ILLEGAL") {
             throw new R5IllegalInstructionException();
         }
         return InstructionApplication.fromOpcode(declaration, opcode);

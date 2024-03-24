@@ -23,20 +23,20 @@ import li.cil.sedna.riscv.exception.R5MemoryAccessException;
 import li.cil.sedna.utils.DecisionTreeNode;
 
 public class R5CPUNonGenerated extends R5CPUTemplate {
-    DecisionTreeNode<Integer, InstructionDeclaration> decoderDecisionTree64;
-    DecisionTreeNode<Integer, InstructionDeclaration> decoderDecisionTree32;
+    DebugDecoderTreeVisitor decoder64;
+    DebugDecoderTreeVisitor decoder32;
 
     public R5CPUNonGenerated(final MemoryMap physicalMemory, @Nullable final RealTimeCounter rtc) {
         super(physicalMemory, rtc);
 
-        decoderDecisionTree64 = specToDecisionTree(R5Instructions.RV64.getDecoderTree());
-        decoderDecisionTree32 = specToDecisionTree(R5Instructions.RV32.getDecoderTree());
+        decoder64 = specToDecoder(R5Instructions.RV64.getDecoderTree());
+        decoder32 = specToDecoder(R5Instructions.RV32.getDecoderTree());
     }
 
-    private static DecisionTreeNode<Integer, InstructionDeclaration> specToDecisionTree(AbstractDecoderTreeNode decoderTree) {
+    private static DebugDecoderTreeVisitor specToDecoder(AbstractDecoderTreeNode decoderTree) {
         DebugDecoderTreeVisitor debugDecoderCreator = new DebugDecoderTreeVisitor();
         decoderTree.accept(debugDecoderCreator);
-        return debugDecoderCreator.getDecisionTree();
+        return debugDecoderCreator;
     }
 
     public static Method getInstructionMethod(String instructionName) {
@@ -85,35 +85,35 @@ public class R5CPUNonGenerated extends R5CPUTemplate {
         }
     }
 
-    private DecisionTreeNode<Integer, InstructionDeclaration> getDecisionTree() {
+    private DebugDecoderTreeVisitor getDecoder() {
         if (xlen == R5.XLEN_32) {
-            return decoderDecisionTree32;
+            return decoder32;
         } else {
-            return decoderDecisionTree64;
+            return decoder64;
         }
     }
 
     protected void interpretInstruction(final MemoryMappedDevice device, int inst, long pc, int instOffset, final int instEnd, final LongSet breakpoints) {
         try{
             int instructionSize = (inst & 0b11) == 0b11? 4: 2;
-            var instructionDeclared = getDecisionTree().decide(inst);
-            var instructionMethod = getInstructionMethod(instructionDeclared.name);
-            var instructionApplied = InstructionApplication.fromOpcode(instructionDeclared, inst);
+            
+            var instruction = getDecoder().decode(inst);
+            var instructionMethod = getInstructionMethod(instruction.name);
 
             boolean updatePC = true;
-            var ret = invokeInstruction(instructionApplied, instructionMethod, pc, instructionSize);
-            if(ret && instructionApplied.name.charAt(0) == 'B') {
+            var ret = invokeInstruction(instruction, instructionMethod, pc, instructionSize);
+            if(ret && instruction.name.charAt(0) == 'B') {
                 // don't update pc on true branch
                 updatePC = false;
             }
-            if (instructionApplied.name.charAt(0) == 'J') {
+            if (instruction.name.charAt(0) == 'J') {
                 // don't update pc on jump
                 updatePC = false;
             }
-            if (instructionApplied.name.equals("ECALL")
-                || instructionApplied.name.equals("EBREAK")
-                || instructionApplied.name.equals("MRET")
-                || instructionApplied.name.equals("SRET")) {
+            if (instruction.name.equals("ECALL")
+                || instruction.name.equals("EBREAK")
+                || instruction.name.equals("MRET")
+                || instruction.name.equals("SRET")) {
                 // don't update pc on exceptions or returns
                 updatePC = false;
             }
