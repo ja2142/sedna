@@ -4,6 +4,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
+
 import javax.annotation.Nullable;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import li.cil.sedna.api.Sizes;
@@ -12,7 +14,6 @@ import li.cil.sedna.api.device.rtc.RealTimeCounter;
 import li.cil.sedna.api.memory.MemoryAccessException;
 import li.cil.sedna.api.memory.MemoryMap;
 import li.cil.sedna.instruction.InstructionApplication;
-import li.cil.sedna.instruction.InstructionDeclaration;
 import li.cil.sedna.instruction.InstructionDefinition.Instruction;
 import li.cil.sedna.instruction.InstructionDefinition.InstructionSize;
 import li.cil.sedna.instruction.InstructionDefinition.ProgramCounter;
@@ -20,9 +21,10 @@ import li.cil.sedna.instruction.decoder.DebugDecoderTreeVisitor;
 import li.cil.sedna.instruction.decoder.tree.AbstractDecoderTreeNode;
 import li.cil.sedna.riscv.exception.R5IllegalInstructionException;
 import li.cil.sedna.riscv.exception.R5MemoryAccessException;
-import li.cil.sedna.utils.DecisionTreeNode;
 
 public class R5CPUNonGenerated extends R5CPUTemplate {
+    HashMap<String, Method> methodsByName = new HashMap<>();
+
     DebugDecoderTreeVisitor decoder64;
     DebugDecoderTreeVisitor decoder32;
 
@@ -39,12 +41,17 @@ public class R5CPUNonGenerated extends R5CPUTemplate {
         return debugDecoderCreator;
     }
 
-    public static Method getInstructionMethod(String instructionName) {
+    public Method getInstructionMethod(String instructionName) {
+        var foundMethod = methodsByName.get(instructionName);
+        if (foundMethod != null) {
+            return foundMethod;
+        }
         final Class<? extends Annotation> instructionAnnotation = Instruction.class;
         for (final Method method : R5CPUTemplate.class.getDeclaredMethods()) {
             if (method.isAnnotationPresent(instructionAnnotation)) {
                 Instruction instruction = (Instruction)method.getAnnotation(instructionAnnotation);
                 if(instruction.value().equals(instructionName)) {
+                    methodsByName.put(instructionName, method);
                     return method;
                 }
             }
