@@ -46,97 +46,97 @@ import java.util.function.LongConsumer;
  */
 @Serialized
 class R5CPUTemplate implements R5CPU {
-    private static final int PC_INIT = 0x1000; // Initial position of program counter.
+    protected static final int PC_INIT = 0x1000; // Initial position of program counter.
 
     // UBE, SBE, MBE hardcoded to zero for little endianness.
-    private static final long MSTATUS_MASK = ~R5.STATUS_UBE_MASK & ~R5.STATUS_SBE_MASK & ~R5.STATUS_MBE_MASK;
+    protected static final long MSTATUS_MASK = ~R5.STATUS_UBE_MASK & ~R5.STATUS_SBE_MASK & ~R5.STATUS_MBE_MASK;
 
     // No time and no high perf counters.
-    private static final int COUNTEREN_MASK = R5.MCOUNTERN_CY | R5.MCOUNTERN_IR;
+    protected static final int COUNTEREN_MASK = R5.MCOUNTERN_CY | R5.MCOUNTERN_IR;
 
     // Supervisor status (sstatus) CSR mask over mstatus.
-    private static final long SSTATUS_MASK = (R5.STATUS_UIE_MASK | R5.STATUS_SIE_MASK |
+    protected static final long SSTATUS_MASK = (R5.STATUS_UIE_MASK | R5.STATUS_SIE_MASK |
         R5.STATUS_UPIE_MASK | R5.STATUS_SPIE_MASK |
         R5.STATUS_SPP_MASK | R5.STATUS_FS_MASK |
         R5.STATUS_XS_MASK | R5.STATUS_SUM_MASK |
         R5.STATUS_MXR_MASK | R5.STATUS_UXL_MASK);
 
     // Translation look-aside buffer config.
-    private static final int TLB_SIZE = 256; // Must be a power of two for fast modulo via `& (TLB_SIZE - 1)`.
+    protected static final int TLB_SIZE = 256; // Must be a power of two for fast modulo via `& (TLB_SIZE - 1)`.
 
     ///////////////////////////////////////////////////////////////////
     // RV32I / RV64I
-    private long pc; // Program counter.
-    private byte mxl; // Current MXLEN, stored to restore after privilege change.
-    private int xlen; // Current XLEN, allows switching between RV32I and RV64I.
-    private final long[] x = new long[32]; // Integer registers. We use sign-extended longs for 32 bit mode.
+    protected long pc; // Program counter.
+    protected byte mxl; // Current MXLEN, stored to restore after privilege change.
+    protected int xlen; // Current XLEN, allows switching between RV32I and RV64I.
+    protected final long[] x = new long[32]; // Integer registers. We use sign-extended longs for 32 bit mode.
 
     ///////////////////////////////////////////////////////////////////
     // RV64FD
-    private final long[] f = new long[32]; // Float registers.
-    private final SoftFloat.Flags fflags = new SoftFloat.Flags(); // flags = fcsr[4:0] := NV . DZ . OF . UF . NX
-    private byte frm; // fcsr[7:5]
-    private byte fs; // FS field of mstatus, separate for convenience.
+    protected final long[] f = new long[32]; // Float registers.
+    protected final SoftFloat.Flags fflags = new SoftFloat.Flags(); // flags = fcsr[4:0] := NV . DZ . OF . UF . NX
+    protected byte frm; // fcsr[7:5]
+    protected byte fs; // FS field of mstatus, separate for convenience.
 
-    private final transient SoftFloat fpu32 = new SoftFloat(fflags);
-    private final transient SoftDouble fpu64 = new SoftDouble(fflags);
+    protected final transient SoftFloat fpu32 = new SoftFloat(fflags);
+    protected final transient SoftDouble fpu64 = new SoftDouble(fflags);
 
     ///////////////////////////////////////////////////////////////////
     // RV64A
-    private long reservation_set = -1L; // Reservation set for RV64A's LR/SC.
+    protected long reservation_set = -1L; // Reservation set for RV64A's LR/SC.
 
     ///////////////////////////////////////////////////////////////////
     // User-level CSRs
-    private long mcycle;
+    protected long mcycle;
 
     // Machine-level CSRs
-    private long mstatus; // Machine Status Register
-    private long mtvec; // Machine Trap-Vector Base-Address Register; 0b11=Mode: 0=direct, 1=vectored
-    private long medeleg, mideleg; // Machine Trap Delegation Registers
-    private final AtomicLong mip = new AtomicLong(); // Pending Interrupts
-    private long mie; // Enabled Interrupts
-    private int mcounteren; // Machine Counter-Enable Register
-    private long mscratch; // Machine Scratch Register
-    private long mepc; // Machine Exception Program Counter
-    private long mcause; // Machine Cause Register
-    private long mtval; //  Machine Trap Value Register
+    protected long mstatus; // Machine Status Register
+    protected long mtvec; // Machine Trap-Vector Base-Address Register; 0b11=Mode: 0=direct, 1=vectored
+    protected long medeleg, mideleg; // Machine Trap Delegation Registers
+    protected final AtomicLong mip = new AtomicLong(); // Pending Interrupts
+    protected long mie; // Enabled Interrupts
+    protected int mcounteren; // Machine Counter-Enable Register
+    protected long mscratch; // Machine Scratch Register
+    protected long mepc; // Machine Exception Program Counter
+    protected long mcause; // Machine Cause Register
+    protected long mtval; //  Machine Trap Value Register
 
     // Supervisor-level CSRs
-    private long stvec; // Supervisor Trap Vector Base Address Register; 0b11=Mode: 0=direct, 1=vectored
-    private int scounteren; // Supervisor Counter-Enable Register
-    private long sscratch; // Supervisor Scratch Register
-    private long sepc; // Supervisor Exception Program Counter
-    private long scause; // Supervisor Cause Register
-    private long stval; // Supervisor Trap Value Register
-    private long satp; // Supervisor Address Translation and Protection Register
+    protected long stvec; // Supervisor Trap Vector Base Address Register; 0b11=Mode: 0=direct, 1=vectored
+    protected int scounteren; // Supervisor Counter-Enable Register
+    protected long sscratch; // Supervisor Scratch Register
+    protected long sepc; // Supervisor Exception Program Counter
+    protected long scause; // Supervisor Cause Register
+    protected long stval; // Supervisor Trap Value Register
+    protected long satp; // Supervisor Address Translation and Protection Register
 
     ///////////////////////////////////////////////////////////////////
     // Misc. state
-    private int priv; // Current privilege level.
-    private boolean waitingForInterrupt;
+    protected int priv; // Current privilege level.
+    protected boolean waitingForInterrupt;
 
     ///////////////////////////////////////////////////////////////////
     // Memory access
 
     // Translation look-aside buffers.
-    private final transient TLBEntry[] fetchTLB = new TLBEntry[TLB_SIZE];
-    private final transient TLBEntry[] loadTLB = new TLBEntry[TLB_SIZE];
-    private final transient TLBEntry[] storeTLB = new TLBEntry[TLB_SIZE];
+    protected final transient TLBEntry[] fetchTLB = new TLBEntry[TLB_SIZE];
+    protected final transient TLBEntry[] loadTLB = new TLBEntry[TLB_SIZE];
+    protected final transient TLBEntry[] storeTLB = new TLBEntry[TLB_SIZE];
 
     // Access to physical memory for load/store operations.
-    private final transient MemoryMap physicalMemory;
+    protected final transient MemoryMap physicalMemory;
 
     ///////////////////////////////////////////////////////////////////
     // Stepping
-    private int cycleDebt; // Traces may lead to us running more cycles than given, remember to pay it back.
+    protected int cycleDebt; // Traces may lead to us running more cycles than given, remember to pay it back.
 
     ///////////////////////////////////////////////////////////////////
     // Real time counter -- at least in RISC-V Linux 5.1 the mtime CSR is needed in add_device_randomness
     // where it doesn't use the SBI. Not implementing it would cause an illegal instruction exception
     // halting the system.
-    private final transient RealTimeCounter rtc;
-    private transient int cycleFrequency = 50_000_000;
-    private final transient DebugInterface debugInterface = new DebugInterface();
+    protected final transient RealTimeCounter rtc;
+    protected transient int cycleFrequency = 50_000_000;
+    protected final transient DebugInterface debugInterface = new DebugInterface();
 
     public R5CPUTemplate(final MemoryMap physicalMemory, @Nullable final RealTimeCounter rtc) {
         // This cast is necessary so that stack frame computation in ASM does not throw
@@ -303,16 +303,16 @@ class R5CPUTemplate implements R5CPU {
     ///////////////////////////////////////////////////////////////////
     // Interpretation
 
-    private long misa() {
+    protected long misa() {
         // Base ISA descriptor CSR (misa) (V2p16).
         return (R5.mxl(xlen) << R5.mxlShift(xlen)) | R5.isa('I', 'M', 'A', 'C', 'F', 'D', 'S', 'U');
     }
 
-    private long getSupervisorStatusMask() {
+    protected long getSupervisorStatusMask() {
         return SSTATUS_MASK | R5.getStatusStateDirtyMask(xlen);
     }
 
-    private void interpret(final boolean singleStep, final boolean ignoreBreakpoints) {
+    protected void interpret(final boolean singleStep, final boolean ignoreBreakpoints) {
         // The idea here is to run many sequential instructions with very little overhead.
         // We only need to exit the inner loop when we either leave the page we started in,
         // jump around (jumps, conditionals) or some state that influences how memory access
@@ -363,7 +363,7 @@ class R5CPUTemplate implements R5CPU {
     //     much faster than having the actual decoding happen in one more method.
 
     @SuppressWarnings("LocalCanBeFinal") // `pc` and `instOffset` get updated by the generated code replacing decode().
-    private void interpretTrace32(final MemoryMappedDevice device, int inst, long pc, int instOffset, final int instEnd, final LongSet breakpoints) {
+    protected void interpretTrace32(final MemoryMappedDevice device, int inst, long pc, int instOffset, final int instEnd, final LongSet breakpoints) {
         try { // Catch any exceptions to patch PC field.
             for (; ; ) { // End of page check at the bottom since we enter with a valid inst.
                 if (breakpoints != null && breakpoints.contains(pc)) {
@@ -400,7 +400,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @SuppressWarnings("LocalCanBeFinal") // `pc` and `instOffset` get updated by the generated code replacing decode().
-    private void interpretTrace64(final MemoryMappedDevice device, int inst, long pc, int instOffset, final int instEnd, final LongSet breakpoints) {
+    protected void interpretTrace64(final MemoryMappedDevice device, int inst, long pc, int instOffset, final int instEnd, final LongSet breakpoints) {
         try { // Catch any exceptions to patch PC field.
             for (; ; ) { // End of page check at the bottom since we enter with a valid inst.
                 if (breakpoints != null && breakpoints.contains(pc)) {
@@ -439,21 +439,21 @@ class R5CPUTemplate implements R5CPU {
     // terrible, but I can't think of an easy way of doing this properly
     // changing decode hook in the generators seems hard, maybe there's some
     // not completely unreasonable way to get this from a stack frame below?
-    private static R5CPUTemplate savedThis;
+    protected static R5CPUTemplate savedThis;
 
     protected void doDecode() throws R5IllegalInstructionException, R5MemoryAccessException {
         throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings("RedundantThrows")
-    private static void decode() throws R5IllegalInstructionException, R5MemoryAccessException {
+    protected static void decode() throws R5IllegalInstructionException, R5MemoryAccessException {
         savedThis.doDecode();
     }
 
     ///////////////////////////////////////////////////////////////////
     // CSR
 
-    private boolean csrrwx(final int rd, final long newValue, final int csr) throws R5IllegalInstructionException {
+    protected boolean csrrwx(final int rd, final long newValue, final int csr) throws R5IllegalInstructionException {
         final boolean exitTrace;
 
         checkCSR(csr, true);
@@ -468,7 +468,7 @@ class R5CPUTemplate implements R5CPU {
         return exitTrace;
     }
 
-    private boolean csrrscx(final int rd, final int rs1, final int csr, final long mask, final boolean isSet) throws R5IllegalInstructionException {
+    protected boolean csrrscx(final int rd, final int rs1, final int csr, final long mask, final boolean isSet) throws R5IllegalInstructionException {
         final boolean mayChange = rs1 != 0;
 
         if (mayChange) {
@@ -488,7 +488,7 @@ class R5CPUTemplate implements R5CPU {
         return false;
     }
 
-    private void checkCSR(final int csr, final boolean throwIfReadonly) throws R5IllegalInstructionException {
+    protected void checkCSR(final int csr, final boolean throwIfReadonly) throws R5IllegalInstructionException {
         if (throwIfReadonly && ((csr >= 0xC00 && csr <= 0xC1F) || (csr >= 0xC80 && csr <= 0xC9F)))
             throw new R5IllegalInstructionException();
 
@@ -502,7 +502,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @SuppressWarnings("DuplicateBranchesInSwitch")
-    private long readCSR(final int csr) throws R5IllegalInstructionException {
+    protected long readCSR(final int csr) throws R5IllegalInstructionException {
         switch (csr) {
             // Floating-Point Control and Status Registers
             case 0x001 -> { // fflags, Floating-Point Accrued Exceptions.
@@ -727,7 +727,7 @@ class R5CPUTemplate implements R5CPU {
         }
     }
 
-    private boolean writeCSR(final int csr, final long value) throws R5IllegalInstructionException {
+    protected boolean writeCSR(final int csr, final long value) throws R5IllegalInstructionException {
         switch (csr) {
             // Floating-Point Control and Status Registers
             case 0x001 -> { // fflags, Floating-Point Accrued Exceptions.
@@ -948,7 +948,7 @@ class R5CPUTemplate implements R5CPU {
         return false;
     }
 
-    private void checkCounterAccess(final int bit) throws R5IllegalInstructionException {
+    protected void checkCounterAccess(final int bit) throws R5IllegalInstructionException {
         // See Volume 2 p36: mcounteren/scounteren define availability to next lowest privilege level.
         if (priv < R5.PRIVILEGE_M) {
             final int counteren;
@@ -967,14 +967,14 @@ class R5CPUTemplate implements R5CPU {
     ///////////////////////////////////////////////////////////////////
     // Misc
 
-    private long getStatus(final long mask) {
+    protected long getStatus(final long mask) {
         final long status = (mstatus | (fs << R5.STATUS_FS_SHIFT)) & mask;
         final boolean dirty = ((mstatus & R5.STATUS_FS_MASK) == R5.STATUS_FS_MASK) ||
             ((mstatus & R5.STATUS_XS_MASK) == R5.STATUS_XS_MASK);
         return status | (dirty ? R5.getStatusStateDirtyMask(xlen) : 0);
     }
 
-    private void setStatus(final long value) {
+    protected void setStatus(final long value) {
         final long change = mstatus ^ value;
         final boolean mmuConfigChanged =
             (change & (R5.STATUS_MPRV_MASK | R5.STATUS_SUM_MASK | R5.STATUS_MXR_MASK)) != 0 ||
@@ -990,7 +990,7 @@ class R5CPUTemplate implements R5CPU {
         mstatus = (mstatus & ~mask) | (value & mask);
     }
 
-    private void setPrivilege(final int level) {
+    protected void setPrivilege(final int level) {
         if (priv == level) {
             return;
         }
@@ -1006,7 +1006,7 @@ class R5CPUTemplate implements R5CPU {
         priv = level;
     }
 
-    private int resolveRoundingMode(int rm) throws R5IllegalInstructionException {
+    protected int resolveRoundingMode(int rm) throws R5IllegalInstructionException {
         if (rm == R5.FCSR_FRM_DYN) {
             rm = frm;
         }
@@ -1019,7 +1019,7 @@ class R5CPUTemplate implements R5CPU {
     ///////////////////////////////////////////////////////////////////
     // Exceptions
 
-    private void raiseException(final long exception, final long value) {
+    protected void raiseException(final long exception, final long value) {
         // Exceptions take cycle.
         mcycle++;
 
@@ -1082,11 +1082,11 @@ class R5CPUTemplate implements R5CPU {
         }
     }
 
-    private void raiseException(final long cause) {
+    protected void raiseException(final long cause) {
         raiseException(cause, 0);
     }
 
-    private void raiseInterrupt(final long pending) {
+    protected void raiseInterrupt(final long pending) {
         final boolean mieEnabled = (mstatus & R5.STATUS_MIE_MASK) != 0;
         final boolean sieEnabled = (mstatus & R5.STATUS_SIE_MASK) != 0;
 
@@ -1129,7 +1129,7 @@ class R5CPUTemplate implements R5CPU {
     ///////////////////////////////////////////////////////////////////
     // MMU
 
-    private TLBEntry fetchPage(final long address) throws R5MemoryAccessException {
+    protected TLBEntry fetchPage(final long address) throws R5MemoryAccessException {
         if ((address & 1) != 0) {
             throw new R5MemoryAccessException(address, R5.EXCEPTION_MISALIGNED_FETCH);
         }
@@ -1144,39 +1144,39 @@ class R5CPUTemplate implements R5CPU {
         }
     }
 
-    private byte load8(final long address) throws R5MemoryAccessException {
+    protected byte load8(final long address) throws R5MemoryAccessException {
         return (byte) loadx(address, Sizes.SIZE_8, Sizes.SIZE_8_LOG2);
     }
 
-    private void store8(final long address, final byte value) throws R5MemoryAccessException {
+    protected void store8(final long address, final byte value) throws R5MemoryAccessException {
         storex(address, value, Sizes.SIZE_8, Sizes.SIZE_8_LOG2);
     }
 
-    private short load16(final long address) throws R5MemoryAccessException {
+    protected short load16(final long address) throws R5MemoryAccessException {
         return (short) loadx(address, Sizes.SIZE_16, Sizes.SIZE_16_LOG2);
     }
 
-    private void store16(final long address, final short value) throws R5MemoryAccessException {
+    protected void store16(final long address, final short value) throws R5MemoryAccessException {
         storex(address, value, Sizes.SIZE_16, Sizes.SIZE_16_LOG2);
     }
 
-    private int load32(final long address) throws R5MemoryAccessException {
+    protected int load32(final long address) throws R5MemoryAccessException {
         return (int) loadx(address, Sizes.SIZE_32, Sizes.SIZE_32_LOG2);
     }
 
-    private void store32(final long address, final int value) throws R5MemoryAccessException {
+    protected void store32(final long address, final int value) throws R5MemoryAccessException {
         storex(address, value, Sizes.SIZE_32, Sizes.SIZE_32_LOG2);
     }
 
-    private long load64(final long address) throws R5MemoryAccessException {
+    protected long load64(final long address) throws R5MemoryAccessException {
         return loadx(address, Sizes.SIZE_64, Sizes.SIZE_64_LOG2);
     }
 
-    private void store64(final long address, final long value) throws R5MemoryAccessException {
+    protected void store64(final long address, final long value) throws R5MemoryAccessException {
         storex(address, value, Sizes.SIZE_64, Sizes.SIZE_64_LOG2);
     }
 
-    private long loadx(final long address, final int size, final int sizeLog2) throws R5MemoryAccessException {
+    protected long loadx(final long address, final int size, final int sizeLog2) throws R5MemoryAccessException {
         final int index = (int) ((address >>> R5.PAGE_ADDRESS_SHIFT) & (TLB_SIZE - 1));
         final int alignment = size / 8; // Enforce aligned memory access.
         final int alignmentMask = alignment - 1;
@@ -1193,7 +1193,7 @@ class R5CPUTemplate implements R5CPU {
         }
     }
 
-    private void storex(final long address, final long value, final int size, final int sizeLog2) throws R5MemoryAccessException {
+    protected void storex(final long address, final long value, final int size, final int sizeLog2) throws R5MemoryAccessException {
         final int index = (int) ((address >>> R5.PAGE_ADDRESS_SHIFT) & (TLB_SIZE - 1));
         final int alignment = size / 8; // Enforce aligned memory access.
         final int alignmentMask = alignment - 1;
@@ -1210,7 +1210,7 @@ class R5CPUTemplate implements R5CPU {
         }
     }
 
-    private TLBEntry fetchPageSlow(final long address) throws R5MemoryAccessException {
+    protected TLBEntry fetchPageSlow(final long address) throws R5MemoryAccessException {
         final long physicalAddress = getPhysicalAddress(address, MemoryAccessType.FETCH, false);
         final MappedMemoryRange range = physicalMemory.getMemoryRange(physicalAddress);
         if (range == null || !range.device.supportsFetch()) {
@@ -1227,7 +1227,7 @@ class R5CPUTemplate implements R5CPU {
         return tlb;
     }
 
-    private long loadSlow(final long address, final int sizeLog2) throws R5MemoryAccessException {
+    protected long loadSlow(final long address, final int sizeLog2) throws R5MemoryAccessException {
         final long physicalAddress = getPhysicalAddress(address, MemoryAccessType.LOAD, false);
         final MappedMemoryRange range = physicalMemory.getMemoryRange(physicalAddress);
         if (range == null) {
@@ -1246,7 +1246,7 @@ class R5CPUTemplate implements R5CPU {
         }
     }
 
-    private void storeSlow(final long address, final long value, final int sizeLog2) throws R5MemoryAccessException {
+    protected void storeSlow(final long address, final long value, final int sizeLog2) throws R5MemoryAccessException {
         final long physicalAddress = getPhysicalAddress(address, MemoryAccessType.STORE, false);
         final MappedMemoryRange range = physicalMemory.getMemoryRange(physicalAddress);
         if (range == null) {
@@ -1267,7 +1267,7 @@ class R5CPUTemplate implements R5CPU {
         }
     }
 
-    private long getPhysicalAddress(final long virtualAddress, final MemoryAccessType accessType, final boolean bypassPermissions) throws R5MemoryAccessException {
+    protected long getPhysicalAddress(final long virtualAddress, final MemoryAccessType accessType, final boolean bypassPermissions) throws R5MemoryAccessException {
         final int privilege;
         if ((mstatus & R5.STATUS_MPRV_MASK) != 0 && accessType != MemoryAccessType.FETCH) {
             privilege = (int) ((mstatus & R5.STATUS_MPP_MASK) >>> R5.STATUS_MPP_SHIFT);
@@ -1396,7 +1396,7 @@ class R5CPUTemplate implements R5CPU {
         throw getPageFaultException(accessType, virtualAddress);
     }
 
-    private static R5MemoryAccessException getPageFaultException(final MemoryAccessType accessType, final long address) {
+    protected static R5MemoryAccessException getPageFaultException(final MemoryAccessType accessType, final long address) {
         return switch (accessType) {
             case LOAD -> new R5MemoryAccessException(address, R5.EXCEPTION_LOAD_PAGE_FAULT);
             case STORE -> new R5MemoryAccessException(address, R5.EXCEPTION_STORE_PAGE_FAULT);
@@ -1407,12 +1407,12 @@ class R5CPUTemplate implements R5CPU {
     ///////////////////////////////////////////////////////////////////
     // TLB
 
-    private static TLBEntry updateTLB(final TLBEntry[] tlb, final long address, final long physicalAddress, final MappedMemoryRange range) {
+    protected static TLBEntry updateTLB(final TLBEntry[] tlb, final long address, final long physicalAddress, final MappedMemoryRange range) {
         final int index = (int) ((address >>> R5.PAGE_ADDRESS_SHIFT) & (TLB_SIZE - 1));
         return updateTLBEntry(tlb[index], address, physicalAddress, range);
     }
 
-    private static TLBEntry updateTLBEntry(final TLBEntry tlb, final long address, final long physicalAddress, final MappedMemoryRange range) {
+    protected static TLBEntry updateTLBEntry(final TLBEntry tlb, final long address, final long physicalAddress, final MappedMemoryRange range) {
         tlb.hash = address & ~R5.PAGE_ADDRESS_MASK;
         tlb.toOffset = physicalAddress - address - range.start;
         tlb.device = range.device;
@@ -1420,7 +1420,7 @@ class R5CPUTemplate implements R5CPU {
         return tlb;
     }
 
-    private void flushTLB() {
+    protected void flushTLB() {
         // Only reset the most necessary field, the hash (which we use to check if an entry is applicable).
         // Reset per-array for *much* faster clears due to it being a faster memory access pattern/the
         // hotspot optimizer being able to more efficiently handle it (probably the latter, I suspect this
@@ -1436,7 +1436,7 @@ class R5CPUTemplate implements R5CPU {
         }
     }
 
-    private void flushTLB(final long address) {
+    protected void flushTLB(final long address) {
         final int index = (int) ((address >>> R5.PAGE_ADDRESS_SHIFT) & (TLB_SIZE - 1));
         final long hash = address & ~R5.PAGE_ADDRESS_MASK;
 
@@ -1455,7 +1455,7 @@ class R5CPUTemplate implements R5CPU {
     // RV32I Base Instruction Set
 
     @Instruction("LUI")
-    private void lui(@Field("rd") final int rd,
+    protected void lui(@Field("rd") final int rd,
                      @Field("imm") final int imm) {
         if (rd != 0) {
             x[rd] = imm;
@@ -1463,7 +1463,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AUIPC")
-    private void auipc(@Field("rd") final int rd,
+    protected void auipc(@Field("rd") final int rd,
                        @Field("imm") final int imm,
                        @ProgramCounter final long pc) {
         if (rd != 0) {
@@ -1472,7 +1472,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("JAL")
-    private void jal(@Field("rd") final int rd,
+    protected void jal(@Field("rd") final int rd,
                      @Field("imm") final int imm,
                      @ProgramCounter final long pc,
                      @InstructionSize final int instructionSize) {
@@ -1484,7 +1484,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("JALR")
-    private void jalr(@Field("rd") final int rd,
+    protected void jalr(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("imm") final int imm,
                       @ProgramCounter final long pc,
@@ -1499,7 +1499,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("BEQ")
-    private boolean beq(@Field("rs1") final int rs1,
+    protected boolean beq(@Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("imm") final int imm,
                         @ProgramCounter final long pc) {
@@ -1512,7 +1512,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("BNE")
-    private boolean bne(@Field("rs1") final int rs1,
+    protected boolean bne(@Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("imm") final int imm,
                         @ProgramCounter final long pc) {
@@ -1525,7 +1525,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("BLT")
-    private boolean blt(@Field("rs1") final int rs1,
+    protected boolean blt(@Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("imm") final int imm,
                         @ProgramCounter final long pc) {
@@ -1538,7 +1538,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("BGE")
-    private boolean bge(@Field("rs1") final int rs1,
+    protected boolean bge(@Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("imm") final int imm,
                         @ProgramCounter final long pc) {
@@ -1551,7 +1551,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("BLTU")
-    private boolean bltu(@Field("rs1") final int rs1,
+    protected boolean bltu(@Field("rs1") final int rs1,
                          @Field("rs2") final int rs2,
                          @Field("imm") final int imm,
                          @ProgramCounter final long pc) {
@@ -1564,7 +1564,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("BGEU")
-    private boolean bgeu(@Field("rs1") final int rs1,
+    protected boolean bgeu(@Field("rs1") final int rs1,
                          @Field("rs2") final int rs2,
                          @Field("imm") final int imm,
                          @ProgramCounter final long pc) {
@@ -1577,7 +1577,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("LB")
-    private void lb(@Field("rd") final int rd,
+    protected void lb(@Field("rd") final int rd,
                     @Field("rs1") final int rs1,
                     @Field("imm") final int imm) throws R5MemoryAccessException {
         final int result = load8(x[rs1] + imm);
@@ -1587,7 +1587,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("LH")
-    private void lh(@Field("rd") final int rd,
+    protected void lh(@Field("rd") final int rd,
                     @Field("rs1") final int rs1,
                     @Field("imm") final int imm) throws R5MemoryAccessException {
         final int result = load16(x[rs1] + imm);
@@ -1597,7 +1597,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("LW")
-    private void lw(@Field("rd") final int rd,
+    protected void lw(@Field("rd") final int rd,
                     @Field("rs1") final int rs1,
                     @Field("imm") final int imm) throws R5MemoryAccessException {
         final int result = load32(x[rs1] + imm);
@@ -1607,7 +1607,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("LBU")
-    private void lbu(@Field("rd") final int rd,
+    protected void lbu(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("imm") final int imm) throws R5MemoryAccessException {
         final int result = load8(x[rs1] + imm) & 0xFF;
@@ -1617,7 +1617,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("LHU")
-    private void lhu(@Field("rd") final int rd,
+    protected void lhu(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("imm") final int imm) throws R5MemoryAccessException {
         final int result = load16(x[rs1] + imm) & 0xFFFF;
@@ -1627,28 +1627,28 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SB")
-    private void sb(@Field("rs1") final int rs1,
+    protected void sb(@Field("rs1") final int rs1,
                     @Field("rs2") final int rs2,
                     @Field("imm") final int imm) throws R5MemoryAccessException {
         store8(x[rs1] + imm, (byte) x[rs2]);
     }
 
     @Instruction("SH")
-    private void sh(@Field("rs1") final int rs1,
+    protected void sh(@Field("rs1") final int rs1,
                     @Field("rs2") final int rs2,
                     @Field("imm") final int imm) throws R5MemoryAccessException {
         store16(x[rs1] + imm, (short) x[rs2]);
     }
 
     @Instruction("SW")
-    private void sw(@Field("rs1") final int rs1,
+    protected void sw(@Field("rs1") final int rs1,
                     @Field("rs2") final int rs2,
                     @Field("imm") final int imm) throws R5MemoryAccessException {
         store32(x[rs1] + imm, (int) x[rs2]);
     }
 
     @Instruction("ADDI")
-    private void addi(@Field("rd") final int rd,
+    protected void addi(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("imm") final int imm) {
         if (rd != 0) {
@@ -1657,7 +1657,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SLTI")
-    private void slti(@Field("rd") final int rd,
+    protected void slti(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("imm") final int imm) {
         if (rd != 0) {
@@ -1666,7 +1666,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SLTIU")
-    private void sltiu(@Field("rd") final int rd,
+    protected void sltiu(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("imm") final int imm) {
         if (rd != 0) {
@@ -1675,7 +1675,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("XORI")
-    private void xori(@Field("rd") final int rd,
+    protected void xori(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("imm") final int imm) {
         if (rd != 0) {
@@ -1684,7 +1684,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("ORI")
-    private void ori(@Field("rd") final int rd,
+    protected void ori(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("imm") final int imm) {
         if (rd != 0) {
@@ -1693,7 +1693,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("ANDI")
-    private void andi(@Field("rd") final int rd,
+    protected void andi(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("imm") final int imm) {
         if (rd != 0) {
@@ -1702,7 +1702,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SLLI")
-    private void slli(@Field("rd") final int rd,
+    protected void slli(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("shamt") final int shamt) {
         if (rd != 0) {
@@ -1711,7 +1711,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SRLI")
-    private void srli(@Field("rd") final int rd,
+    protected void srli(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("shamt") final int shamt) {
         if (rd != 0) {
@@ -1720,7 +1720,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SRAI")
-    private void srai(@Field("rd") final int rd,
+    protected void srai(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("shamt") final int shamt) {
         if (rd != 0) {
@@ -1729,7 +1729,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("ADD")
-    private void add(@Field("rd") final int rd,
+    protected void add(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1738,7 +1738,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SUB")
-    private void sub(@Field("rd") final int rd,
+    protected void sub(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1747,7 +1747,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SLL")
-    private void sll(@Field("rd") final int rd,
+    protected void sll(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1756,7 +1756,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SLT")
-    private void slt(@Field("rd") final int rd,
+    protected void slt(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1765,7 +1765,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SLTU")
-    private void sltu(@Field("rd") final int rd,
+    protected void sltu(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1774,7 +1774,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("XOR")
-    private void xor(@Field("rd") final int rd,
+    protected void xor(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1783,7 +1783,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SRL")
-    private void srl(@Field("rd") final int rd,
+    protected void srl(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1792,7 +1792,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SRA")
-    private void sra(@Field("rd") final int rd,
+    protected void sra(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1801,7 +1801,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("OR")
-    private void or(@Field("rd") final int rd,
+    protected void or(@Field("rd") final int rd,
                     @Field("rs1") final int rs1,
                     @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1810,7 +1810,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AND")
-    private void and(@Field("rd") final int rd,
+    protected void and(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1819,18 +1819,18 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FENCE")
-    private void fence() {
+    protected void fence() {
         // no-op
     }
 
     @Instruction("ECALL")
-    private void ecall(@ProgramCounter final long pc) {
+    protected void ecall(@ProgramCounter final long pc) {
         this.pc = pc; // raiseException reads the field to store it in mepc/sepc.
         raiseException(R5.EXCEPTION_USER_ECALL + priv);
     }
 
     @Instruction("EBREAK")
-    private void ebreak(@ProgramCounter final long pc) {
+    protected void ebreak(@ProgramCounter final long pc) {
         this.pc = pc; // raiseException reads the field to store it in mepc/sepc.
         raiseException(R5.EXCEPTION_BREAKPOINT);
     }
@@ -1839,7 +1839,7 @@ class R5CPUTemplate implements R5CPU {
     // RV64I Base Instruction Set
 
     @Instruction("AUIPCW")
-    private void auipcw(@Field("rd") final int rd,
+    protected void auipcw(@Field("rd") final int rd,
                         @Field("imm") final int imm,
                         @ProgramCounter final long pc) {
         if (rd != 0) {
@@ -1848,7 +1848,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("JALW")
-    private void jalw(@Field("rd") final int rd,
+    protected void jalw(@Field("rd") final int rd,
                       @Field("imm") final int imm,
                       @ProgramCounter final long pc,
                       @InstructionSize final int instructionSize) {
@@ -1860,7 +1860,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("JALRW")
-    private void jalrw(@Field("rd") final int rd,
+    protected void jalrw(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("imm") final int imm,
                        @ProgramCounter final long pc,
@@ -1875,7 +1875,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("ADDIW")
-    private void addiw(@Field("rd") final int rd,
+    protected void addiw(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("imm") final int imm) {
         if (rd != 0) {
@@ -1884,7 +1884,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SLLIW")
-    private void slliw(@Field("rd") final int rd,
+    protected void slliw(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("shamt") final int shamt) {
         if (rd != 0) {
@@ -1893,7 +1893,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SRLIW")
-    private void srliw(@Field("rd") final int rd,
+    protected void srliw(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("shamt") final int shamt) {
         if (rd != 0) {
@@ -1902,7 +1902,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SRAIW")
-    private void sraiw(@Field("rd") final int rd,
+    protected void sraiw(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("shamt") final int shamt) {
         if (rd != 0) {
@@ -1911,7 +1911,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("ADDW")
-    private void addw(@Field("rd") final int rd,
+    protected void addw(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1920,7 +1920,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SUBW")
-    private void subw(@Field("rd") final int rd,
+    protected void subw(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1929,7 +1929,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SLLW")
-    private void sllw(@Field("rd") final int rd,
+    protected void sllw(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1938,7 +1938,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SRLW")
-    private void srlw(@Field("rd") final int rd,
+    protected void srlw(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1947,7 +1947,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SRAW")
-    private void sraw(@Field("rd") final int rd,
+    protected void sraw(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -1956,7 +1956,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("LWU")
-    private void lwu(@Field("rd") final int rd,
+    protected void lwu(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("imm") final int imm) throws R5MemoryAccessException {
         final long address = x[rs1] + imm;
@@ -1967,7 +1967,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("LD")
-    private void ld(@Field("rd") final int rd,
+    protected void ld(@Field("rd") final int rd,
                     @Field("rs1") final int rs1,
                     @Field("imm") final int imm) throws R5MemoryAccessException {
         final long address = x[rs1] + imm;
@@ -1978,7 +1978,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SD")
-    private void sd(@Field("rs1") final int rs1,
+    protected void sd(@Field("rs1") final int rs1,
                     @Field("rs2") final int rs2,
                     @Field("imm") final int imm) throws R5MemoryAccessException {
         store64(x[rs1] + imm, x[rs2]);
@@ -1988,7 +1988,7 @@ class R5CPUTemplate implements R5CPU {
     // RV32/RV64 Zifencei Standard Extension
 
     @Instruction("FENCE.I")
-    private void fence_i() {
+    protected void fence_i() {
         // no-op
     }
 
@@ -1996,42 +1996,42 @@ class R5CPUTemplate implements R5CPU {
     // RV32/RV64 Zicsr Standard Extension
 
     @Instruction("CSRRW")
-    private boolean csrrw(@Field("rd") final int rd,
+    protected boolean csrrw(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("csr") final int csr) throws R5IllegalInstructionException {
         return csrrwx(rd, x[rs1], csr);
     }
 
     @Instruction("CSRRS")
-    private boolean csrrs(@Field("rd") final int rd,
+    protected boolean csrrs(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("csr") final int csr) throws R5IllegalInstructionException {
         return csrrscx(rd, rs1, csr, x[rs1], true);
     }
 
     @Instruction("CSRRC")
-    private boolean csrrc(@Field("rd") final int rd,
+    protected boolean csrrc(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("csr") final int csr) throws R5IllegalInstructionException {
         return csrrscx(rd, rs1, csr, x[rs1], false);
     }
 
     @Instruction("CSRRWI")
-    private boolean csrrwi(@Field("rd") final int rd,
+    protected boolean csrrwi(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("csr") final int csr) throws R5IllegalInstructionException {
         return csrrwx(rd, rs1, csr);
     }
 
     @Instruction("CSRRSI")
-    private boolean csrrsi(@Field("rd") final int rd,
+    protected boolean csrrsi(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("csr") final int csr) throws R5IllegalInstructionException {
         return csrrscx(rd, rs1, csr, rs1, true);
     }
 
     @Instruction("CSRRCI")
-    private boolean csrrci(@Field("rd") final int rd,
+    protected boolean csrrci(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("csr") final int csr) throws R5IllegalInstructionException {
         return csrrscx(rd, rs1, csr, rs1, false);
@@ -2041,7 +2041,7 @@ class R5CPUTemplate implements R5CPU {
     // RV32M Standard Extension
 
     @Instruction("MUL")
-    private void mul(@Field("rd") final int rd,
+    protected void mul(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2050,7 +2050,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("MULH")
-    private void mulh(@Field("rd") final int rd,
+    protected void mulh(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2062,7 +2062,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("MULHSU")
-    private void mulhsu(@Field("rd") final int rd,
+    protected void mulhsu(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2074,7 +2074,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("MULHU")
-    private void mulhu(@Field("rd") final int rd,
+    protected void mulhu(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2086,7 +2086,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("DIV")
-    private void div(@Field("rd") final int rd,
+    protected void div(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2101,7 +2101,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("DIVU")
-    private void divu(@Field("rd") final int rd,
+    protected void divu(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2114,7 +2114,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("REM")
-    private void rem(@Field("rd") final int rd,
+    protected void rem(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2129,7 +2129,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("REMU")
-    private void remu(@Field("rd") final int rd,
+    protected void remu(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2145,7 +2145,7 @@ class R5CPUTemplate implements R5CPU {
     // RV64M Standard Extension
 
     @Instruction("MULW")
-    private void mulw(@Field("rd") final int rd,
+    protected void mulw(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2154,7 +2154,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("MULHW")
-    private void mulhw(@Field("rd") final int rd,
+    protected void mulhw(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2163,7 +2163,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("MULHSUW")
-    private void mulhsuw(@Field("rd") final int rd,
+    protected void mulhsuw(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2172,7 +2172,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("MULHUW")
-    private void mulhuw(@Field("rd") final int rd,
+    protected void mulhuw(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2181,7 +2181,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("DIVW")
-    private void divw(@Field("rd") final int rd,
+    protected void divw(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2196,7 +2196,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("DIVUW")
-    private void divuw(@Field("rd") final int rd,
+    protected void divuw(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2209,7 +2209,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("REMW")
-    private void remw(@Field("rd") final int rd,
+    protected void remw(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2224,7 +2224,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("REMUW")
-    private void remuw(@Field("rd") final int rd,
+    protected void remuw(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         if (rd != 0) {
@@ -2240,7 +2240,7 @@ class R5CPUTemplate implements R5CPU {
     // RV32A Standard Extension
 
     @Instruction("LR.W")
-    private void lr_w(@Field("rd") final int rd,
+    protected void lr_w(@Field("rd") final int rd,
                       @Field("rs1") final int rs1) throws R5MemoryAccessException {
         final long address = x[rs1];
         final int result = load32(address);
@@ -2252,7 +2252,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SC.W")
-    private void sc_w(@Field("rd") final int rd,
+    protected void sc_w(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final int result;
@@ -2272,7 +2272,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOSWAP.W")
-    private void amoswap_w(@Field("rd") final int rd,
+    protected void amoswap_w(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2287,7 +2287,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOADD.W")
-    private void amoadd_w(@Field("rd") final int rd,
+    protected void amoadd_w(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2302,7 +2302,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOXOR.W")
-    private void amoxor_w(@Field("rd") final int rd,
+    protected void amoxor_w(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2317,7 +2317,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOAND.W")
-    private void amoand_w(@Field("rd") final int rd,
+    protected void amoand_w(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2332,7 +2332,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOOR.W")
-    private void amoor_w(@Field("rd") final int rd,
+    protected void amoor_w(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2347,7 +2347,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOMIN.W")
-    private void amomin_w(@Field("rd") final int rd,
+    protected void amomin_w(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2362,7 +2362,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOMAX.W")
-    private void amomax_w(@Field("rd") final int rd,
+    protected void amomax_w(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2377,7 +2377,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOMINU.W")
-    private void amominu_w(@Field("rd") final int rd,
+    protected void amominu_w(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2393,7 +2393,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOMAXU.W")
-    private void amomaxu_w(@Field("rd") final int rd,
+    protected void amomaxu_w(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2411,7 +2411,7 @@ class R5CPUTemplate implements R5CPU {
     // RV64A Standard Extension
 
     @Instruction("LR.D")
-    private void lr_d(@Field("rd") final int rd,
+    protected void lr_d(@Field("rd") final int rd,
                       @Field("rs1") final int rs1) throws R5MemoryAccessException {
         final long address = x[rs1];
         final long result = load64(address);
@@ -2423,7 +2423,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SC.D")
-    private void sc_d(@Field("rd") final int rd,
+    protected void sc_d(@Field("rd") final int rd,
                       @Field("rs1") final int rs1,
                       @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final int result;
@@ -2443,7 +2443,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOSWAP.D")
-    private void amoswap_d(@Field("rd") final int rd,
+    protected void amoswap_d(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2458,7 +2458,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOADD.D")
-    private void amoadd_d(@Field("rd") final int rd,
+    protected void amoadd_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2473,7 +2473,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOXOR.D")
-    private void amoxor_d(@Field("rd") final int rd,
+    protected void amoxor_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2488,7 +2488,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOAND.D")
-    private void amoand_d(@Field("rd") final int rd,
+    protected void amoand_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2503,7 +2503,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOOR.D")
-    private void amoor_d(@Field("rd") final int rd,
+    protected void amoor_d(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2518,7 +2518,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOMIN.D")
-    private void amomin_d(@Field("rd") final int rd,
+    protected void amomin_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2533,7 +2533,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOMAX.D")
-    private void amomax_d(@Field("rd") final int rd,
+    protected void amomax_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2548,7 +2548,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOMINU.D")
-    private void amominu_d(@Field("rd") final int rd,
+    protected void amominu_d(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2563,7 +2563,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("AMOMAXU.D")
-    private void amomaxu_d(@Field("rd") final int rd,
+    protected void amomaxu_d(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rs2") final int rs2) throws R5MemoryAccessException {
         final long address = x[rs1];
@@ -2581,7 +2581,7 @@ class R5CPUTemplate implements R5CPU {
     // Privileged Instructions
 
     @Instruction("SRET")
-    private boolean sret() throws R5IllegalInstructionException {
+    protected boolean sret() throws R5IllegalInstructionException {
         if (priv < R5.PRIVILEGE_S) {
             throw new R5IllegalInstructionException();
         }
@@ -2606,7 +2606,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("MRET")
-    private boolean mret() throws R5IllegalInstructionException {
+    protected boolean mret() throws R5IllegalInstructionException {
         if (priv < R5.PRIVILEGE_M) {
             throw new R5IllegalInstructionException();
         }
@@ -2627,7 +2627,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("WFI")
-    private boolean wfi() throws R5IllegalInstructionException {
+    protected boolean wfi() throws R5IllegalInstructionException {
         if (priv == R5.PRIVILEGE_U) {
             throw new R5IllegalInstructionException();
         }
@@ -2644,7 +2644,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("SFENCE.VMA")
-    private boolean sfence_vma(@Field("rs1") final int rs1,
+    protected boolean sfence_vma(@Field("rs1") final int rs1,
                                @Field("rs2") final int rs2) throws R5IllegalInstructionException {
         if (priv == R5.PRIVILEGE_U) {
             throw new R5IllegalInstructionException();
@@ -2665,7 +2665,7 @@ class R5CPUTemplate implements R5CPU {
     ///////////////////////////////////////////////////////////////////
     // RV32F Standard Extension
 
-    private static int checkFloat(final long value) {
+    protected static int checkFloat(final long value) {
         // As per V1p74: operations except for FLW, FSW, FMV check if operands are correctly
         //               NaN-boxed, if not the operand is replaced with the canonical NaN.
         if ((value & R5.NAN_BOXING_MASK) != R5.NAN_BOXING_MASK) {
@@ -2676,7 +2676,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FLW")
-    private void flw(@Field("rd") final int rd,
+    protected void flw(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("imm") final int imm) throws R5MemoryAccessException {
         f[rd] = load32(x[rs1] + imm) | R5.NAN_BOXING_MASK;
@@ -2684,7 +2684,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSW")
-    private void fsw(@Field("rs1") final int rs1,
+    protected void fsw(@Field("rs1") final int rs1,
                      @Field("rs2") final int rs2,
                      @Field("imm") final int imm) throws R5MemoryAccessException {
         if (fs == R5.FS_OFF) return;
@@ -2692,7 +2692,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMADD.S")
-    private void fmadd_s(@Field("rd") final int rd,
+    protected void fmadd_s(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rs2") final int rs2,
                          @Field("rs3") final int rs3,
@@ -2703,7 +2703,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMSUB.S")
-    private void fmsub_s(@Field("rd") final int rd,
+    protected void fmsub_s(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rs2") final int rs2,
                          @Field("rs3") final int rs3,
@@ -2714,7 +2714,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FNMSUB.S")
-    private void fnmsub_s(@Field("rd") final int rd,
+    protected void fnmsub_s(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2,
                           @Field("rs3") final int rs3,
@@ -2725,7 +2725,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FNMADD.S")
-    private void fnmadd_s(@Field("rd") final int rd,
+    protected void fnmadd_s(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2,
                           @Field("rs3") final int rs3,
@@ -2736,7 +2736,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FADD.S")
-    private void fadd_s(@Field("rd") final int rd,
+    protected void fadd_s(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("rm") int rm) throws R5IllegalInstructionException {
@@ -2746,7 +2746,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSUB.S")
-    private void fsub_s(@Field("rd") final int rd,
+    protected void fsub_s(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("rm") int rm) throws R5IllegalInstructionException {
@@ -2756,7 +2756,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMUL.S")
-    private void fmul_s(@Field("rd") final int rd,
+    protected void fmul_s(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("rm") int rm) throws R5IllegalInstructionException {
@@ -2766,7 +2766,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FDIV.S")
-    private void fdiv_s(@Field("rd") final int rd,
+    protected void fdiv_s(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("rm") int rm) throws R5IllegalInstructionException {
@@ -2776,7 +2776,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSQRT.S")
-    private void fsqrt_s(@Field("rd") final int rd,
+    protected void fsqrt_s(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -2785,7 +2785,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSGNJ.S")
-    private void fsgnj_s(@Field("rd") final int rd,
+    protected void fsgnj_s(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rs2") final int rs2) {
         final long value = checkFloat(f[rs1]) & ~SoftFloat.SIGN_MASK;
@@ -2794,7 +2794,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSGNJN.S")
-    private void fsgnjn_s(@Field("rd") final int rd,
+    protected void fsgnjn_s(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) {
         final long value = checkFloat(f[rs1]) & ~SoftFloat.SIGN_MASK;
@@ -2803,7 +2803,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSGNJX.S")
-    private void fsgnjx_s(@Field("rd") final int rd,
+    protected void fsgnjx_s(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) {
         f[rd] = f[rs1] ^ (checkFloat(f[rs2]) & SoftFloat.SIGN_MASK) | R5.NAN_BOXING_MASK;
@@ -2811,7 +2811,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMIN.S")
-    private void fmin_s(@Field("rd") final int rd,
+    protected void fmin_s(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2) {
         f[rd] = fpu32.min(checkFloat(f[rs1]), checkFloat(f[rs2])) | R5.NAN_BOXING_MASK;
@@ -2819,7 +2819,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMAX.S")
-    private void fmax_s(@Field("rd") final int rd,
+    protected void fmax_s(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2) {
         f[rd] = fpu32.max(checkFloat(f[rs1]), checkFloat(f[rs2])) | R5.NAN_BOXING_MASK;
@@ -2827,7 +2827,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.W.S")
-    private void fcvt_w_s(@Field("rd") final int rd,
+    protected void fcvt_w_s(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -2838,7 +2838,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.WU.S")
-    private void fcvt_wu_s(@Field("rd") final int rd,
+    protected void fcvt_wu_s(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -2849,7 +2849,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMV.X.W")
-    private void fmv_x_w(@Field("rd") final int rd,
+    protected void fmv_x_w(@Field("rd") final int rd,
                          @Field("rs1") final int rs1) {
         if (rd != 0) {
             x[rd] = (int) f[rs1];
@@ -2857,7 +2857,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FEQ.S")
-    private void feq_s(@Field("rd") final int rd,
+    protected void feq_s(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         final boolean areEqual = fpu32.equals(checkFloat(f[rs1]), checkFloat(f[rs2]));
@@ -2867,7 +2867,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FLT.S")
-    private void flt_s(@Field("rd") final int rd,
+    protected void flt_s(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         final boolean isLessThan = fpu32.lessThan(checkFloat(f[rs1]), checkFloat(f[rs2]));
@@ -2877,7 +2877,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FLE.S")
-    private void fle_s(@Field("rd") final int rd,
+    protected void fle_s(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         final boolean isLessOrEqual = fpu32.lessOrEqual(checkFloat(f[rs1]), checkFloat(f[rs2]));
@@ -2887,7 +2887,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCLASS.S")
-    private void fclass_s(@Field("rd") final int rd,
+    protected void fclass_s(@Field("rd") final int rd,
                           @Field("rs1") final int rs1) {
         if (rd != 0) {
             x[rd] = fpu32.classify(checkFloat(f[rs1]));
@@ -2895,7 +2895,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.S.W")
-    private void fcvt_s_w(@Field("rd") final int rd,
+    protected void fcvt_s_w(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -2904,7 +2904,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.S.WU")
-    private void fcvt_s_wu(@Field("rd") final int rd,
+    protected void fcvt_s_wu(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -2913,7 +2913,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMV.W.X")
-    private void fmv_w_x(@Field("rd") final int rd,
+    protected void fmv_w_x(@Field("rd") final int rd,
                          @Field("rs1") final int rs1) {
         f[rd] = x[rs1] | R5.NAN_BOXING_MASK;
         fs = R5.FS_DIRTY;
@@ -2923,7 +2923,7 @@ class R5CPUTemplate implements R5CPU {
     // RV64F Standard Extension
 
     @Instruction("FCVT.L.S")
-    private void fcvt_l_s(@Field("rd") final int rd,
+    protected void fcvt_l_s(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -2934,7 +2934,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.LU.S")
-    private void fcvt_lu_s(@Field("rd") final int rd,
+    protected void fcvt_lu_s(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -2945,7 +2945,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.S.L")
-    private void fcvt_s_l(@Field("rd") final int rd,
+    protected void fcvt_s_l(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -2954,7 +2954,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.S.LU")
-    private void fcvt_s_lu(@Field("rd") final int rd,
+    protected void fcvt_s_lu(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -2966,7 +2966,7 @@ class R5CPUTemplate implements R5CPU {
     // RV32D Standard Extension
 
     @Instruction("FLD")
-    private void fld(@Field("rd") final int rd,
+    protected void fld(@Field("rd") final int rd,
                      @Field("rs1") final int rs1,
                      @Field("imm") final int imm) throws R5MemoryAccessException {
         f[rd] = load64(x[rs1] + imm);
@@ -2974,7 +2974,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSD")
-    private void fsd(@Field("rs1") final int rs1,
+    protected void fsd(@Field("rs1") final int rs1,
                      @Field("rs2") final int rs2,
                      @Field("imm") final int imm) throws R5MemoryAccessException {
         if (fs == R5.FS_OFF) return;
@@ -2982,7 +2982,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMADD.D")
-    private void fmadd_d(@Field("rd") final int rd,
+    protected void fmadd_d(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rs2") final int rs2,
                          @Field("rs3") final int rs3,
@@ -2993,7 +2993,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMSUB.D")
-    private void FMSUB_D(@Field("rd") final int rd,
+    protected void FMSUB_D(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rs2") final int rs2,
                          @Field("rs3") final int rs3,
@@ -3004,7 +3004,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FNMSUB.D")
-    private void fnmsub_d(@Field("rd") final int rd,
+    protected void fnmsub_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2,
                           @Field("rs3") final int rs3,
@@ -3015,7 +3015,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FNMADD.D")
-    private void fnmadd_d(@Field("rd") final int rd,
+    protected void fnmadd_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2,
                           @Field("rs3") final int rs3,
@@ -3026,7 +3026,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FADD.D")
-    private void fadd_d(@Field("rd") final int rd,
+    protected void fadd_d(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("rm") int rm) throws R5IllegalInstructionException {
@@ -3036,7 +3036,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSUB.D")
-    private void fsub_d(@Field("rd") final int rd,
+    protected void fsub_d(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("rm") int rm) throws R5IllegalInstructionException {
@@ -3046,7 +3046,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMUL.D")
-    private void fmul_d(@Field("rd") final int rd,
+    protected void fmul_d(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("rm") int rm) throws R5IllegalInstructionException {
@@ -3056,7 +3056,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FDIV.D")
-    private void fdiv_d(@Field("rd") final int rd,
+    protected void fdiv_d(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2,
                         @Field("rm") int rm) throws R5IllegalInstructionException {
@@ -3066,7 +3066,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSQRT.D")
-    private void fsqrt_d(@Field("rd") final int rd,
+    protected void fsqrt_d(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3075,7 +3075,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSGNJ.D")
-    private void fsgnj_d(@Field("rd") final int rd,
+    protected void fsgnj_d(@Field("rd") final int rd,
                          @Field("rs1") final int rs1,
                          @Field("rs2") final int rs2) {
         final long value = f[rs1] & ~SoftDouble.SIGN_MASK;
@@ -3084,7 +3084,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSGNJN.D")
-    private void fsgnjn_d(@Field("rd") final int rd,
+    protected void fsgnjn_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) {
         final long value = f[rs1] & ~SoftDouble.SIGN_MASK;
@@ -3093,7 +3093,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FSGNJX.D")
-    private void fsgnjx_d(@Field("rd") final int rd,
+    protected void fsgnjx_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rs2") final int rs2) {
         f[rd] = f[rs1] ^ (f[rs2] & SoftDouble.SIGN_MASK);
@@ -3101,7 +3101,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMIN.D")
-    private void fmin_d(@Field("rd") final int rd,
+    protected void fmin_d(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2) {
         f[rd] = fpu64.min(f[rs1], f[rs2]);
@@ -3109,7 +3109,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMAX.D")
-    private void fmax_d(@Field("rd") final int rd,
+    protected void fmax_d(@Field("rd") final int rd,
                         @Field("rs1") final int rs1,
                         @Field("rs2") final int rs2) {
         f[rd] = fpu64.max(f[rs1], f[rs2]);
@@ -3117,7 +3117,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.S.D")
-    private void fcvt_s_d(@Field("rd") final int rd,
+    protected void fcvt_s_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3126,7 +3126,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.D.S")
-    private void fcvt_d_s(@Field("rd") final int rd,
+    protected void fcvt_d_s(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3135,7 +3135,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FEQ.D")
-    private void feq_d(@Field("rd") final int rd,
+    protected void feq_d(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         final boolean areEqual = fpu64.equals(f[rs1], f[rs2]);
@@ -3145,7 +3145,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FLT.D")
-    private void flt_d(@Field("rd") final int rd,
+    protected void flt_d(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         final boolean isLessThan = fpu64.lessThan(f[rs1], f[rs2]);
@@ -3155,7 +3155,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FLE.D")
-    private void fle_d(@Field("rd") final int rd,
+    protected void fle_d(@Field("rd") final int rd,
                        @Field("rs1") final int rs1,
                        @Field("rs2") final int rs2) {
         final boolean isLessOrEqual = fpu64.lessOrEqual(f[rs1], f[rs2]);
@@ -3165,7 +3165,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCLASS.D")
-    private void fclass_d(@Field("rd") final int rd,
+    protected void fclass_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1) {
         if (rd != 0) {
             x[rd] = fpu64.classify(f[rs1]);
@@ -3173,7 +3173,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.W.D")
-    private void fcvt_w_d(@Field("rd") final int rd,
+    protected void fcvt_w_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3184,7 +3184,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.WU.D")
-    private void fcvt_wu_d(@Field("rd") final int rd,
+    protected void fcvt_wu_d(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3195,7 +3195,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.D.W")
-    private void fcvt_d_w(@Field("rd") final int rd,
+    protected void fcvt_d_w(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3204,7 +3204,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.D.WU")
-    private void fcvt_d_wu(@Field("rd") final int rd,
+    protected void fcvt_d_wu(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3216,7 +3216,7 @@ class R5CPUTemplate implements R5CPU {
     // RV64D Standard Extension
 
     @Instruction("FCVT.L.D")
-    private void fcvt_l_d(@Field("rd") final int rd,
+    protected void fcvt_l_d(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3227,7 +3227,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.LU.D")
-    private void fcvt_lu_d(@Field("rd") final int rd,
+    protected void fcvt_lu_d(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3238,7 +3238,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMV.X.D")
-    private void fmv_x_d(@Field("rd") final int rd,
+    protected void fmv_x_d(@Field("rd") final int rd,
                          @Field("rs1") final int rs1) {
         if (rd != 0) {
             x[rd] = f[rs1];
@@ -3246,7 +3246,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.D.L")
-    private void fcvt_d_l(@Field("rd") final int rd,
+    protected void fcvt_d_l(@Field("rd") final int rd,
                           @Field("rs1") final int rs1,
                           @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3255,7 +3255,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FCVT.D.LU")
-    private void fcvt_d_lu(@Field("rd") final int rd,
+    protected void fcvt_d_lu(@Field("rd") final int rd,
                            @Field("rs1") final int rs1,
                            @Field("rm") int rm) throws R5IllegalInstructionException {
         rm = resolveRoundingMode(rm);
@@ -3264,7 +3264,7 @@ class R5CPUTemplate implements R5CPU {
     }
 
     @Instruction("FMV.D.X")
-    private void fmv_d_x(@Field("rd") final int rd,
+    protected void fmv_d_x(@Field("rd") final int rd,
                          @Field("rs1") final int rs1) {
         f[rd] = x[rs1];
         fs = R5.FS_DIRTY;
@@ -3272,7 +3272,7 @@ class R5CPUTemplate implements R5CPU {
 
     ///////////////////////////////////////////////////////////////////
 
-    private enum MemoryAccessType {
+    protected enum MemoryAccessType {
         LOAD(R5.PTE_R_MASK),
         STORE(R5.PTE_W_MASK),
         FETCH(R5.PTE_X_MASK),
@@ -3285,7 +3285,7 @@ class R5CPUTemplate implements R5CPU {
         }
     }
 
-    private static final class TLBEntry {
+    protected static final class TLBEntry {
         public long hash = -1;
         public long toOffset;
         public MemoryMappedDevice device;
@@ -3293,9 +3293,9 @@ class R5CPUTemplate implements R5CPU {
         public LongSet breakpoints;
     }
 
-    private final class DebugInterface implements CPUDebugInterface {
-        private final Collection<LongConsumer> breakpointListeners = new ArrayList<>();
-        private final LongSortedSet breakpoints = new LongAVLTreeSet();
+    protected final class DebugInterface implements CPUDebugInterface {
+        protected final Collection<LongConsumer> breakpointListeners = new ArrayList<>();
+        protected final LongSortedSet breakpoints = new LongAVLTreeSet();
 
         @Override
         public long getProgramCounter() {
@@ -3398,7 +3398,7 @@ class R5CPUTemplate implements R5CPU {
          * 1. Need to bypass access protection, particularly the R/W bits
          * 2. Would like to avoid modifying CPU state as much as possible, including TLB entries.
          */
-        private TLBEntry getPageDebug(final long address, final MemoryAccessType accessType) throws R5MemoryAccessException {
+        protected TLBEntry getPageDebug(final long address, final MemoryAccessType accessType) throws R5MemoryAccessException {
             final TLBEntry entry = tryGetTLBEntry(address, accessType);
             if (entry != null) {
                 return entry;
@@ -3415,7 +3415,7 @@ class R5CPUTemplate implements R5CPU {
         }
 
         @Nullable
-        private TLBEntry tryGetTLBEntry(final long address, final MemoryAccessType accessType) {
+        protected TLBEntry tryGetTLBEntry(final long address, final MemoryAccessType accessType) {
             final TLBEntry[] tlb = switch (accessType) {
                 case LOAD -> loadTLB;
                 case STORE -> storeTLB;
@@ -3431,7 +3431,7 @@ class R5CPUTemplate implements R5CPU {
             }
         }
 
-        private void handleBreakpoint(final long pc) {
+        protected void handleBreakpoint(final long pc) {
             for (final LongConsumer listener : breakpointListeners) {
                 listener.accept(pc);
             }

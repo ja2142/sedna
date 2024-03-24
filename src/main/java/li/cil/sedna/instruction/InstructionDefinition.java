@@ -15,18 +15,18 @@ public final class InstructionDefinition {
     }
 
     @Target(ElementType.PARAMETER)
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME)
     public @interface Field {
         String value();
     }
 
     @Target(ElementType.PARAMETER)
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME)
     public @interface InstructionSize {
     }
 
     @Target(ElementType.PARAMETER)
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME)
     public @interface ProgramCounter {
     }
 
