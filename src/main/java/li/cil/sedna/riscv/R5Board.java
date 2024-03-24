@@ -56,10 +56,14 @@ public final class R5Board implements Board {
     @Serialized private String bootargs;
     @Serialized private boolean isRunning;
     @Serialized private boolean isRestarting;
-
+    
     public R5Board() {
+        this(false);
+    }
+
+    public R5Board(boolean useDebugCPU) {
         memoryMap = new SimpleMemoryMap();
-        rtc = cpu = R5CPU.create(memoryMap);
+        rtc = cpu = R5CPU.create(memoryMap, null, useDebugCPU);
 
         flash = new FlashMemoryDevice(FLASH_SIZE);
         clint = new R5CoreLocalInterrupter(rtc);
