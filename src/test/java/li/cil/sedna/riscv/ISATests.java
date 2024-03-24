@@ -93,17 +93,23 @@ public final class ISATests {
     public Collection<DynamicTest> testISA() {
         final File[] testFiles = new File("src/test/data/riscv-tests").listFiles();
         assertNotNull(testFiles);
-        var testsNonDebug = Arrays.stream(testFiles)
+        var tests = Arrays.stream(testFiles)
                 .filter(File::isFile)
                 .map(file -> isaTestFromFile(file, false))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        return tests;
+    }
+
+    @TestFactory
+    public Collection<DynamicTest> testISADebug() {
+        final File[] testFiles = new File("src/test/data/riscv-tests").listFiles();
+        assertNotNull(testFiles);
         var testsDebug = Arrays.stream(testFiles)
                 .filter(File::isFile)
                 .map(file -> isaTestFromFile(file, true))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        testsDebug.addAll(testsNonDebug);
         return testsDebug;
     }
 
